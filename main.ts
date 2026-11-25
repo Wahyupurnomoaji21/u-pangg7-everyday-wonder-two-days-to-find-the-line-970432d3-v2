@@ -21,6 +21,30 @@ import { fileURLToPath } from "node:url";
 const ENTRY =
   "The bus I always miss waited at my stop this morning, doors open, as if it had finally decided to be late for me instead.";
 
+// Guardrails for the entry: it must be a single sentence, non-empty,
+// and at most MAX_CHARS characters. A bad entry fails loudly instead of
+// writing a file the judge would reject.
+const MAX_CHARS = 200;
+
+function fail(message: string): never {
+  console.error(`error: ${message}`);
+  process.exitCode = 1;
+  process.exit(1);
+}
+
+if (ENTRY.length === 0) {
+  fail("entry is empty");
+}
+if (ENTRY.length > MAX_CHARS) {
+  fail(`entry is ${ENTRY.length} characters, over the ${MAX_CHARS} cap`);
+}
+// Exactly one sentence: the only sentence terminator allowed is the final
+// one, so strip it and reject any terminator left in the body.
+const body = /[.!?]$/.test(ENTRY) ? ENTRY.slice(0, -1) : ENTRY;
+if (/[.!?]/.test(body)) {
+  fail("entry must be a single sentence");
+}
+
 // Resolve the output directory: the harness sets MAKEFUN_OUTPUT_DIR, and
 // the sandbox mounts /output. Never rely on the current working directory.
 const outputDir = process.env.MAKEFUN_OUTPUT_DIR ?? "/output";
